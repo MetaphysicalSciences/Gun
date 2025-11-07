@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>AUMRB0 Display</title>
+<title>AUMR Image Cycle</title>
 <style>
 html, body {
   margin: 0;
@@ -11,17 +11,35 @@ html, body {
   overflow: hidden;
   height: 100%;
   width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
   background-color: #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
 }
 img {
   max-width: 100%;
   height: auto;
+  margin-bottom: 0;
+}
+button {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 10;
 }
 </style>
 <script>
+let images = ["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
+let index = 0;
+function cycleImage(){
+  index = (index + 1) % images.length;
+  document.getElementById('aumrImage').src = images[index];
+}
 window.addEventListener('keydown', function(e){
   if(e.key === 'F5') e.preventDefault();
 });
@@ -30,6 +48,7 @@ window.addEventListener('touchmove', function(e){ e.preventDefault(); }, {passiv
 </script>
 </head>
 <body>
-<img src="AUMRB0.png" alt="AUMRB0">
+<button onclick="cycleImage()">Reload</button>
+<img id="aumrImage" src="AUMRB0.png" alt="AUMRB0">
 </body>
 </html>
