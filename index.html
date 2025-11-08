@@ -38,11 +38,12 @@ img {
 }
 </style>
 <script>
-const imgs=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
-let i=0;
+let imgs=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
+let index=0;
 function reloadImg(){
-  i=(i+1)%imgs.length;
-  document.getElementById("mainImg").src=imgs[i];
+  index++;
+  if(index>=imgs.length)index=0;
+  document.getElementById("mainImg").src=imgs[index];
 }
 window.addEventListener('keydown',e=>{if(e.key==="F5")e.preventDefault()});
 window.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
@@ -51,6 +52,6 @@ window.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 </head>
 <body>
 <button onclick="reloadImg()">Reload</button>
-<img id="mainImg" src="AUMRB0.png" alt="">
+<img id="mainImg" src="AUMRB0.png">
 </body>
 </html>
