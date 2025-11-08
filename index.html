@@ -7,7 +7,7 @@
 <style>
 html,body{height:100%;width:100%;margin:0;padding:0;overflow:hidden;background:#000}
 #wrap{height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
-#top{display:flex;justify-content:center;align-items:flex-start;padding-top:18px;pointer-events:auto}
+#top{display:flex;justify-content:center;align-items:flex-start;padding-top:18px}
 button{appearance:none;border:0;padding:10px 28px;border-radius:12px;font-size:18px;background:#222;color:#fff;cursor:pointer;touch-action:manipulation}
 button:active{transform:translateY(1px)}
 #imgWrap{display:flex;justify-content:center;align-items:flex-end;width:100%;flex:1;padding-bottom:12px}
@@ -16,25 +16,23 @@ img{max-width:100%;height:auto;display:block;user-select:none;pointer-events:non
 <script>
 const filenames=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
 const imgs=[];
-let idx=0;
-for(let i=0;i<filenames.length;i++){
-  const im=new Image();
-  im.src=filenames[i];
-  imgs.push(im);
-}
-function nextImage(){
-  idx=(idx+1)%imgs.length;
+for(let i=0;i<filenames.length;i++){const im=new Image();im.src=filenames[i];imgs.push(im);}
+function playOnce(){
+  let idx=0;
   const el=document.getElementById("mainImg");
-  el.src=imgs[idx].src;
-  el.alt=filenames[idx];
+  const interval=setInterval(()=>{
+    el.src=imgs[idx].src;
+    idx++;
+    if(idx>=imgs.length){clearInterval(interval);}
+  },150);
 }
 window.addEventListener('keydown',e=>{if(e.key==="F5")e.preventDefault()});
 window.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
 window.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 document.addEventListener('DOMContentLoaded',function(){
   const btn=document.getElementById("reloadBtn");
-  btn.addEventListener('click',nextImage);
-  btn.addEventListener('touchend',function(e){e.preventDefault();nextImage();},{passive:false});
+  btn.addEventListener('click',playOnce);
+  btn.addEventListener('touchend',function(e){e.preventDefault();playOnce();},{passive:false});
 });
 </script>
 </head>
