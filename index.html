@@ -3,115 +3,71 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Doom-style 3D Game</title>
+<title>Maze Shooter</title>
 <style>
-html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:sans-serif}
-#ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
-#menu,#settings{position:absolute;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;justify-content:center;align-items:center;pointer-events:auto}
-button{padding:12px 28px;margin:10px;font-size:18px;border-radius:10px;background:#222;color:#fff;border:none;cursor:pointer}
-button:active{transform:translateY(1px)}
-#canvas-container{width:100%;height:100%}
+html,body{margin:0;padding:0;overflow:hidden;height:100%;width:100%;background:#000}
+#ui{position:absolute;top:0;left:0;width:100%;display:flex;justify-content:space-between;padding:10px;pointer-events:none}
+#menu{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;justify-content:center;align-items:center;pointer-events:auto;color:#fff;font-family:sans-serif}
+#menu button{margin:10px;padding:10px 30px;font-size:20px;border:none;border-radius:10px;background:#222;color:#fff;cursor:pointer}
+#mobileUI{position:absolute;bottom:10px;width:100%;display:flex;justify-content:space-between;padding:0 20px;pointer-events:none}
+#mobileUI button, .joystick{pointer-events:auto;user-select:none}
+#mobileUI button{width:80px;height:80px;border-radius:40px;background:#222;color:#fff;font-size:16px;border:none}
+.joystick{position:relative;width:100px;height:100px;border-radius:50px;background:rgba(255,255,255,0.1)}
+.knob{position:absolute;width:40px;height:40px;border-radius:20px;background:#555;top:30px;left:30px}
 </style>
-</head>
-<body>
-<div id="canvas-container"></div>
-<div id="ui">
-  <div id="menu">
-    <h1 style="color:#fff;font-size:36px;margin-bottom:40px">Doom-style Game</h1>
-    <button id="startBtn">Start Game</button>
-    <button id="settingsBtn">Settings</button>
-  </div>
-  <div id="settings" style="display:none;flex-direction:column;">
-    <h2 style="color:#fff;margin-bottom:20px">Settings</h2>
-    <label style="color:#fff;margin-bottom:20px"><input type="checkbox" id="mobileToggle"> Mobile Controls</label>
-    <button id="backBtn">Back</button>
-  </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
-let scene,camera,renderer,player;
-let animationPlaying=false;
-let mobileEnabled=false;
-
-function init3D(){
-  const container=document.getElementById("canvas-container");
-  scene=new THREE.Scene();
-  scene.background=new THREE.Color(0x222222);
-  camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
-  renderer=new THREE.WebGLRenderer({antialias:true});
-  renderer.setSize(window.innerWidth,window.innerHeight);
-  container.appendChild(renderer.domElement);
-
-  // floor
-  const floorGeo=new THREE.PlaneGeometry(50,50);
-  const floorMat=new THREE.MeshBasicMaterial({color:0x444444});
-  const floor=new THREE.Mesh(floorGeo,floorMat);
-  floor.rotation.x=-Math.PI/2;
-  scene.add(floor);
-
-  // player plane for sprite animations
-  const texLoader=new THREE.TextureLoader();
-  const startTex=texLoader.load('AUEPA0.png');
-  const planeGeo=new THREE.PlaneGeometry(2,2);
-  const planeMat=new THREE.MeshBasicMaterial({map:startTex,transparent:true});
-  player=new THREE.Mesh(planeGeo,planeMat);
-  player.position.set(0,1,0);
-  scene.add(player);
-
-  camera.position.set(0,2,5);
-
-  animate();
-}
-
-function animate(){
-  requestAnimationFrame(animate);
-  renderer.render(scene,camera);
-}
-
-const reloadSeq=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
-const shootSeq=["AUMPD0.png","AUMPE0.png","AUMPF0.png","AUMFB0.png","AUMFA0.png","AUMPG0.png","AUMRA0.png","AUMPF0.png"];
-
-function playAnimation(seq,endImage){
-  if(animationPlaying) return;
-  animationPlaying=true;
-  let idx=0;
-  const texLoader=new THREE.TextureLoader();
+let mobile=false;
+let inMenu=true;
+let animPlaying=false;
+let reloadSeq=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
+let shootSeq=["AUMPD0.png","AUMPE0.png","AUMPF0.png","AUMFB0.png","AUMFA0.png","AUMPG0.png","AUMRA0.png","AUMPF0.png"];
+let preloadImgs=[...reloadSeq,...shootSeq,"AUEPA0.png"];
+preloadImgs.forEach(f=>{let i=new Image();i.src=f});
+let currentImg="AUEPA0.png";
+function playSequence(seq,endImg){
+  if(animPlaying)return;
+  animPlaying=true;
+  let i=0;
   const interval=setInterval(()=>{
-    const tex=texLoader.load(seq[idx]);
-    player.material.map=tex;
-    idx++;
-    if(idx>=seq.length){
-      clearInterval(interval);
-      if(endImage)player.material.map=texLoader.load(endImage);
-      animationPlaying=false;
-    }
+    currentImg=seq[i];
+    i++;
+    if(i>=seq.length){clearInterval(interval);if(endImg)currentImg=endImg;animPlaying=false;}
   },150);
 }
-
-document.getElementById("startBtn").addEventListener("click",()=>{
-  document.getElementById("menu").style.display="none";
-  init3D();
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById("reloadBtn").addEventListener('click',()=>playSequence(reloadSeq,"AUEPA0.png"));
+  document.getElementById("shootBtn").addEventListener('click',()=>playSequence(shootSeq,null));
+  document.getElementById("mobileToggle").addEventListener('click',()=>{mobile=!mobile;updateUI()});
+  document.getElementById("startBtn").addEventListener('click',()=>{inMenu=false;updateUI()});
+  updateUI();
 });
-document.getElementById("settingsBtn").addEventListener("click",()=>{
-  document.getElementById("menu").style.display="none";
-  document.getElementById("settings").style.display="flex";
-});
-document.getElementById("backBtn").addEventListener("click",()=>{
-  document.getElementById("settings").style.display="none";
-  document.getElementById("menu").style.display="flex";
-});
-document.getElementById("mobileToggle").addEventListener("change",(e)=>{
-  mobileEnabled=e.target.checked;
-});
-
-// keyboard controls
-window.addEventListener("keydown",e=>{
-  if(e.key==="r") playAnimation(reloadSeq,"AUEPA0.png");
-  if(e.key==="f") playAnimation(shootSeq,null);
-});
-
-// resize
-window.addEventListener("resize",()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
+function updateUI(){
+  document.getElementById("menu").style.display=inMenu?"flex":"none";
+  document.getElementById("ui").style.display:!inMenu?"flex":"none";
+  document.getElementById("mobileUI").style.display=!inMenu&&mobile?"flex":"none";
+}
+let scene,camera,renderer,player={x:0,z:0,rot:0},maze=[],walls=[],speed=0.1;
+function generateMaze(){for(let i=0;i<10;i++){maze[i]=[];for(let j=0;j<10;j++){maze[i][j]=Math.random()<0.2?1:0;}}}
+function init(){scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);renderer=new THREE.WebGLRenderer();renderer.setSize(window.innerWidth,window.innerHeight);document.body.appendChild(renderer.domElement);generateMaze();let wallGeo=new THREE.BoxGeometry(1,1,1);let wallMat=new THREE.MeshBasicMaterial({color:0x888888});for(let i=0;i<10;i++){for(let j=0;j<10;j++){if(maze[i][j]){let w=new THREE.Mesh(wallGeo,wallMat);w.position.set(i,0.5,j);scene.add(w);walls.push(w);}}}camera.position.set(0,1.5,0);camera.rotation.order="YXZ";animate();}
+function animate(){requestAnimationFrame(animate);renderer.render(scene,camera);}
+window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
 </script>
+</head>
+<body>
+<div id="menu">
+  <h1>Maze Shooter</h1>
+  <button id="mobileToggle">Mobile Off</button>
+  <button id="startBtn">Start Game</button>
+</div>
+<div id="ui" style="display:none">
+  <button id="reloadBtn">Reload</button>
+  <button id="shootBtn">Shoot</button>
+</div>
+<div id="mobileUI" style="display:none">
+  <div class="joystick" id="moveJoy"><div class="knob"></div></div>
+  <div class="joystick" id="camJoy"><div class="knob"></div></div>
+</div>
+<canvas id="gameCanvas"></canvas>
 </body>
 </html>
