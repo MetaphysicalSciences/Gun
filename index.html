@@ -3,36 +3,46 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>AUMR Sequence</title>
+<title>AUMR Animation</title>
 <style>
 html,body{height:100%;width:100%;margin:0;padding:0;overflow:hidden;background:#000}
 #wrap{height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
-#top{display:flex;justify-content:center;align-items:flex-start;padding-top:18px}
+#top{display:flex;justify-content:center;align-items:flex-start;padding-top:18px;gap:10px}
 button{appearance:none;border:0;padding:10px 28px;border-radius:12px;font-size:18px;background:#222;color:#fff;cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:0.4;cursor:not-allowed}
 button:active{transform:translateY(1px)}
 #imgWrap{display:flex;justify-content:center;align-items:flex-end;width:100%;flex:1;padding-bottom:12px}
 img{max-width:100%;height:auto;display:block;user-select:none;pointer-events:none}
 </style>
 <script>
-const filenames=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
-const imgs=[];
-for(let i=0;i<filenames.length;i++){const im=new Image();im.src=filenames[i];imgs.push(im);}
-function playOnce(){
-  let idx=0;
+const reloadSeq=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
+const shootSeq=["AUMPD0.png","AUMPE0.png","AUMPF0.png","AUMFB0.png","AUMFA0.png","AUMPG0.png","AUMRA0.png","AUMPF0.png"];
+const preload=[...reloadSeq,...shootSeq,"AUEPA0.png"];
+for(let f of preload){const im=new Image();im.src=f;}
+function playSequence(seq,endImg,btn){
+  btn.disabled=true;
+  let i=0;
   const el=document.getElementById("mainImg");
   const interval=setInterval(()=>{
-    el.src=imgs[idx].src;
-    idx++;
-    if(idx>=imgs.length){clearInterval(interval);}
+    el.src=seq[i];
+    i++;
+    if(i>=seq.length){
+      clearInterval(interval);
+      if(endImg)el.src=endImg;
+      setTimeout(()=>{btn.disabled=false;},200);
+    }
   },150);
 }
 window.addEventListener('keydown',e=>{if(e.key==="F5")e.preventDefault()});
 window.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
 window.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
-document.addEventListener('DOMContentLoaded',function(){
-  const btn=document.getElementById("reloadBtn");
-  btn.addEventListener('click',playOnce);
-  btn.addEventListener('touchend',function(e){e.preventDefault();playOnce();},{passive:false});
+document.addEventListener('DOMContentLoaded',()=>{
+  const reloadBtn=document.getElementById("reloadBtn");
+  const shootBtn=document.getElementById("shootBtn");
+  reloadBtn.addEventListener('click',()=>playSequence(reloadSeq,"AUEPA0.png",reloadBtn));
+  reloadBtn.addEventListener('touchend',e=>{e.preventDefault();playSequence(reloadSeq,"AUEPA0.png",reloadBtn);},{passive:false});
+  shootBtn.addEventListener('click',()=>playSequence(shootSeq,null,shootBtn));
+  shootBtn.addEventListener('touchend',e=>{e.preventDefault();playSequence(shootSeq,null,shootBtn);},{passive:false});
 });
 </script>
 </head>
@@ -40,9 +50,10 @@ document.addEventListener('DOMContentLoaded',function(){
 <div id="wrap">
   <div id="top">
     <button id="reloadBtn" type="button">Reload</button>
+    <button id="shootBtn" type="button">Shoot</button>
   </div>
   <div id="imgWrap">
-    <img id="mainImg" src="AUMRB0.png" alt="AUMRB0">
+    <img id="mainImg" src="AUEPA0.png" alt="AUEPA0">
   </div>
 </div>
 </body>
