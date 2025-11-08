@@ -9,10 +9,11 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 #menu,#settings{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#000;gap:20px;z-index:10}
 button{appearance:none;border:0;padding:10px 28px;border-radius:12px;font-size:20px;background:#222;color:#fff;cursor:pointer}
 #mobileControls{position:absolute;bottom:10px;width:100%;display:flex;justify-content:space-between;pointer-events:none;z-index:9}
-.joystick{width:120px;height:120px;background:rgba(255,255,255,0.1);border-radius:50%;position:relative;pointer-events:auto}
-.joystick-inner{width:60px;height:60px;background:rgba(255,255,255,0.3);border-radius:50%;position:absolute;top:30px;left:30px}
-#buttonsMobile{position:absolute;bottom:140px;right:20px;display:flex;flex-direction:column;gap:10px;pointer-events:auto}
+.joystick{width:120px;height:120px;background:rgba(255,255,255,0.1);border-radius:50%;position:relative;pointer-events:auto;touch-action:none}
+.joystick-inner{width:60px;height:60px;background:rgba(255,255,255,0.3);border-radius:50%;position:absolute;top:30px;left:30px;transform:translate(0,0)}
+#buttonsMobile{position:absolute;bottom:140px;right:20px;display:flex;flex-direction:column;gap:10px;pointer-events:auto;z-index:10}
 canvas{display:block}
+img{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);max-width:30%;z-index:10}
 </style>
 </head>
 <body>
@@ -32,19 +33,18 @@ canvas{display:block}
   <button id="reloadBtn">Reload</button>
   <button id="shootBtn">Shoot</button>
 </div>
+<img id="mainImg" src="AUEPA0.png">
+
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 <script>
 let scene,camera,renderer,player,maze=[],mobile=false,animating=false;
 const reloadSeq=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
 const shootSeq=["AUMPD0.png","AUMPE0.png","AUMPF0.png","AUMFB0.png","AUMFA0.png","AUMPG0.png","AUMRA0.png","AUMPF0.png"];
-let mainImg=document.createElement("img");mainImg.src="AUEPA0.png";mainImg.style.position="absolute";mainImg.style.bottom="10px";mainImg.style.left="50%";mainImg.style.transform="translateX(-50%)";mainImg.style.maxWidth="30%";document.body.appendChild(mainImg);
-
-function preloadImages(arr){for(let f of arr){let i=new Image();i.src=f;}}
-preloadImages([...reloadSeq,...shootSeq,["AUEPA0.png"]]);
+const mainImg=document.getElementById("mainImg");
+for(let f of [...reloadSeq,...shootSeq,"AUEPA0.png"]){let i=new Image();i.src=f;}
 
 function playAnim(seq,endImg){
-  if(animating)return;animating=true;
-  let i=0;
+  if(animating)return;animating=true;let i=0;
   const interval=setInterval(()=>{
     mainImg.src=seq[i];i++;
     if(i>=seq.length){clearInterval(interval);if(endImg)mainImg.src=endImg;setTimeout(()=>{animating=false},200);}
@@ -59,6 +59,7 @@ document.getElementById("settingsBtn").addEventListener("click",()=>{document.ge
 document.getElementById("backBtn").addEventListener("click",()=>{document.getElementById("settings").style.display="none";document.getElementById("menu").style.display="flex";});
 document.getElementById("mobileToggle").addEventListener("change",(e)=>{mobile=e.target.checked;document.getElementById("mobileControls").style.display=mobile?"flex":"none";document.getElementById("buttonsMobile").style.display=mobile?"flex":"none";});
 
+let moveInput={x:0,z:0},camInput=0;
 function init(){
   scene=new THREE.Scene();
   camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
@@ -67,22 +68,41 @@ function init(){
   document.body.appendChild(renderer.domElement);
   player={x:0,z:0,rot:0,speed:0.1};
   camera.position.set(player.x,1.6,player.z);camera.rotation.order="YXZ";
-  const light=new THREE.DirectionalLight(0xffffff,1);light.position.set(1,2,1);scene.add(light);
+  const light=new THREE.DirectionalLight(0xffffff,1);light.position.set(5,10,5);scene.add(light);
+  const ambient=new THREE.AmbientLight(0x404040,1);scene.add(ambient);
   generateMaze();
+  setupMobileControls();
   animate();
 }
 
 function generateMaze(){
-  const size=10;const wallGeo=new THREE.BoxGeometry(1,2,1);const wallMat=new THREE.MeshStandardMaterial({color:0x888888});
+  const size=10;
+  const wallGeo=new THREE.BoxGeometry(1,2,1);
+  const wallMat=new THREE.MeshStandardMaterial({color:0x888888});
   for(let x=0;x<size;x++){for(let z=0;z<size;z++){if(Math.random()<0.2){let wall=new THREE.Mesh(wallGeo,wallMat);wall.position.set(x,1,z);scene.add(wall);maze.push({x,z,mesh:wall});}}}
+}
+
+function setupMobileControls(){
+  const moveJoy=document.getElementById("moveJoy");
+  const camJoy=document.getElementById("camJoy");
+  let moveTouch=null,camTouch=null;
+  moveJoy.addEventListener("touchstart",e=>{moveTouch=e.changedTouches[0].identifier});
+  moveJoy.addEventListener("touchend",e=>{if([...e.changedTouches].some(t=>t.identifier===moveTouch)){moveTouch=null;moveInput={x:0,z:0};}});
+  moveJoy.addEventListener("touchmove",e=>{if(moveTouch===null)return;e.preventDefault();let t=[...e.touches].find(t=>t.identifier===moveTouch);let rect=moveJoy.getBoundingClientRect();moveInput.x=(t.clientX-rect.left-60)/60;moveInput.z=(t.clientY-rect.top-60)/60;moveInput.x=Math.max(-1,Math.min(1,moveInput.x));moveInput.z=Math.max(-1,Math.min(1,moveInput.z));});
+  camJoy.addEventListener("touchstart",e=>{camTouch=e.changedTouches[0].identifier});
+  camJoy.addEventListener("touchend",e=>{if([...e.changedTouches].some(t=>t.identifier===camTouch)){camTouch=null;camInput=0;}});
+  camJoy.addEventListener("touchmove",e=>{if(camTouch===null)return;e.preventDefault();let t=[...e.touches].find(t=>t.identifier===camTouch);let rect=camJoy.getBoundingClientRect();camInput=(t.clientX-rect.left-60)/60;camInput=Math.max(-1,Math.min(1,camInput));});
 }
 
 function animate(){
   requestAnimationFrame(animate);
-  if(!mobile){document.addEventListener("keydown",e=>{if(e.key==="w")player.z-=player.speed;if(e.key==="s")player.z+=player.speed;if(e.key==="a")player.x-=player.speed;if(e.key==="d")player.x+=player.speed;if(e.key==="ArrowLeft")player.rot+=0.03;if(e.key==="ArrowRight")player.rot-=0.03;});}
-  camera.position.set(player.x,1.6,player.z);camera.rotation.y=player.rot;
+  if(mobile){player.x+=Math.sin(player.rot)*-moveInput.z*player.speed;player.z+=Math.cos(player.rot)*moveInput.z*player.speed;player.x+=Math.sin(player.rot+Math.PI/2)*-moveInput.x*player.speed;player.z+=Math.cos(player.rot+Math.PI/2)*-moveInput.x*player.speed;player.rot-=camInput*0.05;}
+  else{document.addEventListener("keydown",e=>{if(e.key==="w")player.z-=player.speed;if(e.key==="s")player.z+=player.speed;if(e.key==="a")player.x-=player.speed;if(e.key==="d")player.x+=player.speed;if(e.key==="ArrowLeft")player.rot+=0.03;if(e.key==="ArrowRight")player.rot-=0.03;});}
+  camera.position.set(player.x,1.6,player.z);
+  camera.rotation.y=player.rot;
   renderer.render(scene,camera);
 }
+
 window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
 </script>
 </body>
