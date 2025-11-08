@@ -5,85 +5,90 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>3D Maze Game</title>
 <style>
-html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font-family:sans-serif}
-#menu,#settings{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#000;gap:20px;z-index:10}
-button{appearance:none;border:0;padding:10px 28px;border-radius:12px;font-size:20px;background:#222;color:#fff;cursor:pointer}
-#mobileControls{position:absolute;bottom:10px;width:100%;display:flex;justify-content:space-between;pointer-events:none;z-index:9}
-.joystick{width:120px;height:120px;background:rgba(255,255,255,0.1);border-radius:50%;position:relative;pointer-events:auto}
-.joystick-inner{width:60px;height:60px;background:rgba(255,255,255,0.3);border-radius:50%;position:absolute;top:30px;left:30px}
-#buttonsMobile{position:absolute;bottom:140px;right:20px;display:flex;flex-direction:column;gap:10px;pointer-events:auto}
-canvas{display:block}
+html,body{margin:0;padding:0;overflow:hidden;height:100%;width:100%;background:#000;color:#fff;font-family:sans-serif}
+#menu,#settings{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px}
+button{padding:12px 28px;font-size:20px;border:none;border-radius:10px;background:#222;color:#fff;cursor:pointer;touch-action:manipulation}
+button:active{transform:translateY(1px)}
+#gameCanvas{display:block;width:100%;height:100%}
+#joysticks{position:absolute;bottom:20px;width:100%;display:flex;justify-content:space-between;padding:0 30px;pointer-events:none}
+.joystick{width:100px;height:100px;background:rgba(200,200,200,0.2);border-radius:50%;position:relative;pointer-events:auto;touch-action:none}
+.joystickThumb{width:50px;height:50px;background:rgba(255,255,255,0.5);border-radius:50%;position:absolute;top:25px;left:25px;transform:translate(0,0)}
+#actionButtons{position:absolute;bottom:140px;right:30px;display:flex;flex-direction:column;gap:12px;pointer-events:auto}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/PointerLockControls.js"></script>
+<script>
+let scene,camera,renderer,controls,playerSpeed=0.15,move={f:0,b:0,l:0,r:0},shooting=false,reloading=false,mobile=false,mazeMeshes=[];
+const preloadImages=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png","AUMPD0.png","AUMPE0.png","AUMPF0.png","AUMFB0.png","AUMFA0.png","AUMPG0.png","AUMRA0.png","AUEPA0.png"];
+preloadImages.forEach(f=>{const i=new Image();i.src=f});
+function initGame(){
+scene=new THREE.Scene();
+scene.background=new THREE.Color(0x111111);
+camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.domElement.id="gameCanvas";
+document.body.appendChild(renderer.domElement);
+controls=new THREE.PointerLockControls(camera,renderer.domElement);
+document.body.addEventListener('click',()=>{controls.lock()});
+const light=new THREE.HemisphereLight(0xffffff,0x444444,1.2);scene.add(light);
+const mazeData=[
+"111111111111",
+"100000000001",
+"101111111101",
+"100000000001",
+"111111111111"
+];
+const wallGeo=new THREE.BoxGeometry(1,2,1);const wallMat=new THREE.MeshStandardMaterial({color:0x5555ff});
+mazeData.forEach((row,z)=>{
+  row.split('').forEach((c,x)=>{
+    if(c==="1"){const m=new THREE.Mesh(wallGeo,wallMat);m.position.set(x,1,-z);scene.add(m);mazeMeshes.push(m);}
+  });
+});
+camera.position.set(1,1.5,-1);
+animate();
+}
+function animate(){
+requestAnimationFrame(animate);
+let dir=new THREE.Vector3();
+if(move.f)dir.z-=1;if(move.b)dir.z+=1;if(move.l)dir.x-=1;if(move.r)dir.x+=1;
+if(dir.length()>0){dir.normalize();controls.moveRight(dir.x*playerSpeed);controls.moveForward(dir.z*playerSpeed);}
+renderer.render(scene,camera);
+}
+function playSequence(seq,endImg,callback){
+if(shooting||reloading)return;
+let i=0;let el=document.getElementById("mainImg");const interval=setInterval(()=>{
+el.src=seq[i];i++;if(i>=seq.length){clearInterval(interval);if(endImg)el.src=endImg;if(callback)callback();shooting=false;reloading=false;}
+},150);
+return interval;
+}
+document.addEventListener('DOMContentLoaded',()=>{
+document.getElementById("startGame").addEventListener('click',()=>{document.getElementById("menu").style.display="none";initGame();});
+document.getElementById("mobileToggle").addEventListener('click',()=>{mobile=!mobile;document.getElementById("mobileStatus").innerText=mobile?"ON":"OFF";document.getElementById("joysticks").style.display=mobile?"flex":"none";document.getElementById("actionButtons").style.display=mobile?"flex":"none";});
+document.getElementById("reloadBtn").addEventListener('click',()=>{if(!reloading){reloading=true;playSequence(["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"],"AUEPA0.png");}});
+document.getElementById("shootBtn").addEventListener('click',()=>{if(!shooting){shooting=true;playSequence(["AUMPD0.png","AUMPE0.png","AUMPF0.png","AUMFB0.png","AUMFA0.png","AUMPG0.png","AUMRA0.png","AUMPF0.png"]);}});
+});
+document.addEventListener('keydown',e=>{if(e.key==="w")move.f=1;if(e.key==="s")move.b=1;if(e.key==="a")move.l=1;if(e.key==="d")move.r=1;if(e.key==="r"){if(!reloading){reloading=true;playSequence(["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"],"AUEPA0.png");}}if(e.key==="f"){if(!shooting){shooting=true;playSequence(["AUMPD0.png","AUMPE0.png","AUMPF0.png","AUMFB0.png","AUMFA0.png","AUMPG0.png","AUMRA0.png","AUMPF0.png"]);}}});
+document.addEventListener('keyup',e=>{if(e.key==="w")move.f=0;if(e.key==="s")move.b=0;if(e.key==="a")move.l=0;if(e.key==="d")move.r=0});
+</script>
 </head>
 <body>
 <div id="menu">
-  <button id="startBtn">Start Game</button>
-  <button id="settingsBtn">Settings</button>
+  <h1>3D Maze Game</h1>
+  <button id="startGame">Start Game</button>
+  <div id="settings">
+    <button id="mobileToggle">Toggle Mobile</button>
+    <span id="mobileStatus">OFF</span>
+  </div>
 </div>
-<div id="settings" style="display:none">
-  <label><input type="checkbox" id="mobileToggle"> Mobile Controls</label>
-  <button id="backBtn">Back</button>
+<div id="joysticks" style="display:none">
+  <div class="joystick" id="moveStick"><div class="joystickThumb"></div></div>
+  <div class="joystick" id="camStick"><div class="joystickThumb"></div></div>
 </div>
-<div id="mobileControls" style="display:none">
-  <div class="joystick" id="moveJoy"><div class="joystick-inner"></div></div>
-  <div class="joystick" id="camJoy"><div class="joystick-inner"></div></div>
-</div>
-<div id="buttonsMobile" style="display:none">
+<div id="actionButtons" style="display:none">
   <button id="reloadBtn">Reload</button>
   <button id="shootBtn">Shoot</button>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-<script>
-let scene,camera,renderer,player,maze=[],mobile=false,animating=false;
-const reloadSeq=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
-const shootSeq=["AUMPD0.png","AUMPE0.png","AUMPF0.png","AUMFB0.png","AUMFA0.png","AUMPG0.png","AUMRA0.png","AUMPF0.png"];
-let mainImg=document.createElement("img");mainImg.src="AUEPA0.png";mainImg.style.position="absolute";mainImg.style.bottom="10px";mainImg.style.left="50%";mainImg.style.transform="translateX(-50%)";mainImg.style.maxWidth="30%";document.body.appendChild(mainImg);
-
-function preloadImages(arr){for(let f of arr){let i=new Image();i.src=f;}}
-preloadImages([...reloadSeq,...shootSeq,["AUEPA0.png"]]);
-
-function playAnim(seq,endImg){
-  if(animating)return;animating=true;
-  let i=0;
-  const interval=setInterval(()=>{
-    mainImg.src=seq[i];i++;
-    if(i>=seq.length){clearInterval(interval);if(endImg)mainImg.src=endImg;setTimeout(()=>{animating=false},200);}
-  },150);
-}
-
-document.getElementById("reloadBtn").addEventListener("click",()=>playAnim(reloadSeq,"AUEPA0.png"));
-document.getElementById("shootBtn").addEventListener("click",()=>playAnim(shootSeq,"AUMPF0"));
-
-document.getElementById("startBtn").addEventListener("click",()=>{document.getElementById("menu").style.display="none";init();});
-document.getElementById("settingsBtn").addEventListener("click",()=>{document.getElementById("menu").style.display="none";document.getElementById("settings").style.display="flex";});
-document.getElementById("backBtn").addEventListener("click",()=>{document.getElementById("settings").style.display="none";document.getElementById("menu").style.display="flex";});
-document.getElementById("mobileToggle").addEventListener("change",(e)=>{mobile=e.target.checked;document.getElementById("mobileControls").style.display=mobile?"flex":"none";document.getElementById("buttonsMobile").style.display=mobile?"flex":"none";});
-
-function init(){
-  scene=new THREE.Scene();
-  camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
-  renderer=new THREE.WebGLRenderer({antialias:true});
-  renderer.setSize(window.innerWidth,window.innerHeight);
-  document.body.appendChild(renderer.domElement);
-  player={x:0,z:0,rot:0,speed:0.1};
-  camera.position.set(player.x,1.6,player.z);camera.rotation.order="YXZ";
-  const light=new THREE.DirectionalLight(0xffffff,1);light.position.set(1,2,1);scene.add(light);
-  generateMaze();
-  animate();
-}
-
-function generateMaze(){
-  const size=10;const wallGeo=new THREE.BoxGeometry(1,2,1);const wallMat=new THREE.MeshStandardMaterial({color:0x888888});
-  for(let x=0;x<size;x++){for(let z=0;z<size;z++){if(Math.random()<0.2){let wall=new THREE.Mesh(wallGeo,wallMat);wall.position.set(x,1,z);scene.add(wall);maze.push({x,z,mesh:wall});}}}
-}
-
-function animate(){
-  requestAnimationFrame(animate);
-  if(!mobile){document.addEventListener("keydown",e=>{if(e.key==="w")player.z-=player.speed;if(e.key==="s")player.z+=player.speed;if(e.key==="a")player.x-=player.speed;if(e.key==="d")player.x+=player.speed;if(e.key==="ArrowLeft")player.rot+=0.03;if(e.key==="ArrowRight")player.rot-=0.03;});}
-  camera.position.set(player.x,1.6,player.z);camera.rotation.y=player.rot;
-  renderer.render(scene,camera);
-}
-window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
-</script>
+<img id="mainImg" src="AUEPA0.png" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:150px;height:auto;pointer-events:none">
 </body>
 </html>
