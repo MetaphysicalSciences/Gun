@@ -3,98 +3,84 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>DoomStyle2DShooter</title>
+<title>AUMR Animation</title>
 <style>
-html,body{margin:0;padding:0;height:100%;width:100%;overflow:hidden;background:#111;color:#fff;font-family:sans-serif}
-#wrap{height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
-.menu,#settings{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#111;gap:20px}
-button{appearance:none;border:0;padding:12px 30px;border-radius:10px;font-size:20px;background:#222;color:#fff;cursor:pointer}
-canvas{background:#222;display:block;touch-action:none}
-#mobileControls{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;user-select:none}
-#mobileControls button{padding:15px 25px;font-size:18px}
+html,body{height:100%;width:100%;margin:0;padding:0;overflow:hidden;background:#000}
+#wrap{height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;position:relative}
+#top{display:flex;justify-content:center;align-items:flex-start;padding-top:18px;gap:10px}
+button{appearance:none;border:0;padding:10px 28px;border-radius:12px;font-size:18px;background:#222;color:#fff;cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:0.4;cursor:not-allowed}
+button:active{transform:translateY(1px)}
+#imgWrap{display:flex;justify-content:center;align-items:flex-end;width:100%;flex:1;padding-bottom:12px}
+#ammo{position:absolute;bottom:10px;right:15px;color:#fff;font-size:22px;font-family:sans-serif}
+img{max-width:100%;height:auto;display:block;user-select:none;pointer-events:none}
 </style>
 <script>
-let currentScreen="menu";
-let canvas,ctx,width,height;
-let player={x:200,y:300,w:64,h:64,speed:4,shooting:false};
-let bullets=[],enemies=[],keys={},showMobile=false;
-let gunImg=new Image();gunImg.src="AUEPA0.png";
-function initCanvas(){
-  canvas=document.createElement("canvas");
-  ctx=canvas.getContext("2d");
-  document.getElementById("wrap").appendChild(canvas);
-  resize();
-  window.addEventListener("resize",resize);
-  requestAnimationFrame(loop);
-}
-function resize(){width=window.innerWidth;height=window.innerHeight;canvas.width=width;canvas.height=height}
-function spawnEnemy(){enemies.push({x:width,y:height-100,w:50,h:50,speed:2})}
-function loop(){
-  if(currentScreen==="game"){
-    ctx.clearRect(0,0,width,height);
-    for(let e of enemies){
-      e.x-=e.speed;
-      ctx.fillStyle="red";
-      ctx.fillRect(e.x,e.y,e.w,e.h);
+const reloadSeq=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
+const shootSeq=["AUMPD0.png","AUMPE0.png","AUMPF0.png","AUMFB0.png","AUMFA0.png","AUMPG0.png","AUMRA0.png","AUMPF0.png"];
+const preload=[...reloadSeq,...shootSeq,"AUEPA0.png"];
+for(let f of preload){const im=new Image();im.src=f;}
+let ammo=7;let shooting=false;let reloading=false;
+function updateAmmo(){document.getElementById("ammo").textContent="Ammo: "+ammo;}
+function playSequence(seq,endImg,btn,callback){
+  btn.disabled=true;
+  let i=0;
+  const el=document.getElementById("mainImg");
+  const interval=setInterval(()=>{
+    el.src=seq[i];
+    i++;
+    if(i>=seq.length){
+      clearInterval(interval);
+      if(endImg)el.src=endImg;
+      setTimeout(()=>{btn.disabled=false;if(callback)callback();},200);
     }
-    if(keys["ArrowUp"]||keys["w"]){player.y-=player.speed}
-    if(keys["ArrowDown"]||keys["s"]){player.y+=player.speed}
-    if(keys["ArrowLeft"]||keys["a"]){player.x-=player.speed}
-    if(keys["ArrowRight"]||keys["d"]){player.x+=player.speed}
-    player.y=Math.max(0,Math.min(height-player.h,player.y))
-    player.x=Math.max(0,Math.min(width-player.w,player.x))
-    ctx.drawImage(gunImg,player.x,player.y,player.w,player.h)
-    for(let b of bullets){
-      b.x+=b.speed;
-      ctx.fillStyle="yellow";
-      ctx.fillRect(b.x,b.y,b.w,b.h);
-      for(let i=enemies.length-1;i>=0;i--){
-        let e=enemies[i];
-        if(b.x<b.x+b.w && b.y<b.y+b.h && b.x<b.x+b.w && b.y<b.y+b.h && b.x<e.x+e.w && b.x+b.w>e.x && b.y<e.y+e.h && b.y+b.h>e.y){
-          enemies.splice(i,1);
-        }
-      }
-    }
-  }
-  requestAnimationFrame(loop);
+  },150);
 }
-document.addEventListener("keydown",e=>keys[e.key]=true);
-document.addEventListener("keyup",e=>keys[e.key]=false);
-function shoot(){bullets.push({x:player.x+player.w,y:player.y+player.h/2,w:10,h:4,speed:8})}
-document.addEventListener("click",()=>{if(currentScreen==="game")shoot()});
-function startGame(){currentScreen="game";document.getElementById("menu").style.display="none";document.getElementById("settings").style.display="none";spawnEnemy()}
-function toggleMobile(){showMobile=!showMobile;document.getElementById("mobileControls").style.display=showMobile?"flex":"none"}
-function moveUp(){keys["w"]=true;setTimeout(()=>keys["w"]=false,100)}
-function moveDown(){keys["s"]=true;setTimeout(()=>keys["s"]=false,100)}
-function moveLeft(){keys["a"]=true;setTimeout(()=>keys["a"]=false,100)}
-function moveRight(){keys["d"]=true;setTimeout(()=>keys["d"]=false,100)}
-function mobileShoot(){shoot()}
-window.addEventListener("DOMContentLoaded",()=>{
-  initCanvas();
-  document.getElementById("startBtn").addEventListener("click",startGame);
-  document.getElementById("settingsBtn").addEventListener("click",()=>{currentScreen="settings";document.getElementById("menu").style.display="none";document.getElementById("settings").style.display="flex"});
-  document.getElementById("backBtn").addEventListener("click",()=>{currentScreen="menu";document.getElementById("menu").style.display="flex";document.getElementById("settings").style.display="none"});
-  document.getElementById("toggleMobile").addEventListener("click",toggleMobile);
+function reloadAction(){
+  if(reloading)return;
+  reloading=true;
+  const reloadBtn=document.getElementById("reloadBtn");
+  const shootBtn=document.getElementById("shootBtn");
+  reloadBtn.disabled=true;
+  shootBtn.disabled=true;
+  playSequence(reloadSeq,"AUEPA0.png",reloadBtn,()=>{
+    ammo=7;
+    updateAmmo();
+    reloading=false;
+    shootBtn.disabled=false;
+    reloadBtn.disabled=false;
+  });
+}
+function shootAction(){
+  if(shooting||reloading||ammo<=0)return;
+  shooting=true;
+  ammo--;
+  updateAmmo();
+  const shootBtn=document.getElementById("shootBtn");
+  playSequence(shootSeq,null,shootBtn,()=>{shooting=false;if(ammo<=0)shootBtn.disabled=true;});
+}
+window.addEventListener('keydown',e=>{if(e.key==="F5")e.preventDefault()});
+window.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
+window.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+document.addEventListener('DOMContentLoaded',()=>{
+  updateAmmo();
+  document.getElementById("reloadBtn").addEventListener('click',reloadAction);
+  document.getElementById("reloadBtn").addEventListener('touchend',e=>{e.preventDefault();reloadAction();},{passive:false});
+  document.getElementById("shootBtn").addEventListener('click',shootAction);
+  document.getElementById("shootBtn").addEventListener('touchend',e=>{e.preventDefault();shootAction();},{passive:false});
 });
 </script>
 </head>
 <body>
 <div id="wrap">
-  <div class="menu" id="menu">
-    <button id="startBtn">Start Game</button>
-    <button id="settingsBtn">Settings</button>
+  <div id="top">
+    <button id="reloadBtn" type="button">Reload</button>
+    <button id="shootBtn" type="button">Shoot</button>
   </div>
-  <div class="menu" id="settings" style="display:none">
-    <button id="toggleMobile">Toggle Mobile Buttons</button>
-    <button id="backBtn">Back</button>
+  <div id="imgWrap">
+    <img id="mainImg" src="AUEPA0.png" alt="AUEPA0">
   </div>
-  <div id="mobileControls" style="display:none">
-    <button onclick="moveUp()">↑</button>
-    <button onclick="moveDown()">↓</button>
-    <button onclick="moveLeft()">←</button>
-    <button onclick="moveRight()">→</button>
-    <button onclick="mobileShoot()">Shoot</button>
-  </div>
+  <div id="ammo">Ammo: 7</div>
 </div>
 </body>
 </html>
