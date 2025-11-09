@@ -14,12 +14,12 @@ button{appearance:none;border:0;padding:12px 24px;border-radius:0;font-size:12px
 button:disabled{opacity:.45;cursor:not-allowed}
 button:active{transform:translateY(1px)}
 #imgWrap{display:flex;justify-content:center;align-items:flex-end;width:100%;flex:1;padding-bottom:18px}
-#ammo{position:absolute;bottom:12px;right:12px;display:flex;gap:2px;align-items:center}
-.capsule{width:49px;height:84px} /* bigger 3.5x original */
+#ammo{position:absolute;bottom:12px;right:12px;display:flex;gap:1px;align-items:center}
+.capsule{width:42px;height:72px} 
 img#mainImg{max-width:100%;height:auto;display:block}
 @media (max-width:520px){
   button{padding:10px 18px;font-size:10px;min-width:70px}
-  .capsule{width:35px;height:60px}
+  .capsule{width:28px;height:48px}
 }
 </style>
 <script>
@@ -52,7 +52,7 @@ function animateReloadBullets(startIndex,count,callback){
   const container=document.getElementById("ammo");
   const bullet=container.children[startIndex];
   bullet.style.opacity=1;
-  setTimeout(()=>animateReloadBullets(startIndex+1,count,callback),100);
+  setTimeout(()=>animateReloadBullets(startIndex+1,count-1,callback),100);
 }
 
 function playSequence(seq,endImg,doneCallback,speed){
@@ -78,7 +78,7 @@ function reloadAction(){
   const emptySlots=7-ammo;
   const seq=(ammo<=0)?emptyReloadSeq:reloadSeq;
   playSequence(seq,"AUMPA0.png",()=>{
-    animateReloadBullets(7-emptySlots,emptySlots,()=>{
+    animateReloadBullets(ammo,emptySlots,()=>{
       ammo=7;
       reloading=false;
       reloadBtn.disabled=false;
