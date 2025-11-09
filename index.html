@@ -3,42 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>AUMR Animation</title>
+<title>AUMR Retro</title>
 <style>
-html,body{height:100%;width:100%;margin:0;padding:0;overflow:hidden;background:#0b0b0b;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+html,body{height:100%;width:100%;margin:0;padding:0;overflow:hidden;background:#080808;font-family:'Press Start 2P',monospace;letter-spacing:-1px}
 #wrap{height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;position:relative}
 #top{width:100%;display:flex;justify-content:center;align-items:center;padding:14px 12px;box-sizing:border-box;gap:14px;backdrop-filter:blur(6px)}
 .panel{background:rgba(20,20,20,0.6);border-radius:14px;padding:8px 12px;display:flex;gap:10px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
-button{appearance:none;border:0;padding:10px 22px;border-radius:10px;font-size:16px;background:linear-gradient(180deg,#2a2a2a,#161616);color:#fff;cursor:pointer;touch-action:manipulation;box-shadow:0 4px 14px rgba(0,0,0,0.6);min-width:96px}
-button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+button{appearance:none;border:0;padding:12px 24px;border-radius:8px;font-size:12px;background:linear-gradient(180deg,#2c2c2c,#151515);color:#fff;cursor:pointer;touch-action:manipulation;box-shadow:0 4px 14px rgba(0,0,0,0.6)}
+button:disabled{opacity:.45;cursor:not-allowed}
 button:active{transform:translateY(1px)}
 #imgWrap{display:flex;justify-content:center;align-items:flex-end;width:100%;flex:1;padding-bottom:18px}
-#ammo{position:absolute;bottom:14px;right:16px;color:#fff;font-size:16px;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-#ammoNum{background:rgba(0,0,0,0.45);padding:6px 10px;border-radius:10px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.02)}
-#bullets{display:flex;gap:6px;align-items:center}
-.bullet{width:12px;height:20px;border-radius:3px;background:linear-gradient(180deg,#fffbec,#ffd36b);box-shadow:0 2px 6px rgba(0,0,0,0.5)}
+#ammo{position:absolute;bottom:14px;right:16px;display:flex;gap:6px;align-items:center}
+.bullet{width:14px;height:24px;border-radius:3px;background:linear-gradient(180deg,#fffbec,#ffd36b);box-shadow:0 2px 6px rgba(0,0,0,0.5)}
 .bullet.empty{background:linear-gradient(180deg,#3a3a3a,#202020);opacity:0.6}
-img{max-width:100%;height:auto;display:block;user-select:none;pointer-events:none}
+img{max-width:100%;height:auto;display:block;user-select:none;pointer-events:none;filter:contrast(120%) brightness(1.05)}
 @media (max-width:520px){
-  button{padding:12px 18px;font-size:15px;min-width:84px}
-  .bullet{width:10px;height:16px}
-  #ammo{right:10px;bottom:10px}
+  button{padding:10px 18px;font-size:10px}
+  .bullet{width:10px;height:18px}
 }
 </style>
 <script>
 const reloadSeq=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
-const emptyReloadSeq=["AUERB0.png","AUERC0.png","AUERD0.png","AUERE0.png","AUERF0.png","AUERG0.png","AUERH0.png","AUERI0.png","AUEPA0.png"];
+const emptyReloadSeq=["AUERB0.png","AUERC0.png","AUERD0.png","AUERE0.png","AUERF0.png","AUERG0.png","AUERH0.png","AUERI0.png","AUMPA0.png"];
 const shootSeq=["AUMPD0.png","AUMPE0.png","AUMPF0.png","AUMFB0.png","AUMFA0.png","AUMPG0.png","AUMRA0.png","AUMPF0.png"];
-const preload=[...reloadSeq,...emptyReloadSeq,...shootSeq,"AUEPA0.png"];
+const preload=[...reloadSeq,...emptyReloadSeq,...shootSeq,"AUMPA0.png","AUEPA0.png"];
 for(let f of preload){const im=new Image();im.src=f;}
 let ammo=7;
 let shooting=false;
 let reloading=false;
-function setImgNow(src){const el=document.getElementById("mainImg");el.src=src}
+function setImgNow(src){document.getElementById("mainImg").src=src}
 function updateAmmoUI(){
-  const num=document.getElementById("ammoNum");
-  num.textContent=`Ammo: ${ammo}`;
-  const container=document.getElementById("bullets");
+  const container=document.getElementById("ammo");
   container.innerHTML='';
   for(let i=0;i<7;i++){
     const b=document.createElement('div');
@@ -54,7 +50,7 @@ function playSequence(seq,endImg,doneCallback,speed){
     if(i>=seq.length){
       clearInterval(t);
       if(endImg)el.src=endImg;
-      if(doneCallback)setTimeout(doneCallback,160);
+      if(doneCallback)setTimeout(doneCallback,120);
     }
   },speed);
 }
@@ -66,15 +62,13 @@ function reloadAction(){
   reloadBtn.disabled=true;
   shootBtn.disabled=true;
   const seq=(ammo<=0)?emptyReloadSeq:reloadSeq;
-  playSequence(seq,"AUEPA0.png",()=>{
-    if(ammo<=0){
-      setImgNow("AUEPA0.png");
-    }
+  playSequence(seq,"AUMPA0.png",()=>{
     ammo=7;
     updateAmmoUI();
     reloading=false;
     reloadBtn.disabled=false;
     shootBtn.disabled=false;
+    setImgNow("AUMPA0.png");
   },140);
 }
 function shootAction(){
@@ -94,14 +88,10 @@ function shootAction(){
   },90);
 }
 window.addEventListener('keydown',e=>{if(e.key==="F5")e.preventDefault()});
-window.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
-window.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 document.addEventListener('DOMContentLoaded',()=>{
   updateAmmoUI();
   document.getElementById("reloadBtn").addEventListener('click',reloadAction);
-  document.getElementById("reloadBtn").addEventListener('touchend',e=>{e.preventDefault();reloadAction();},{passive:false});
   document.getElementById("shootBtn").addEventListener('click',shootAction);
-  document.getElementById("shootBtn").addEventListener('touchend',e=>{e.preventDefault();shootAction();},{passive:false});
 });
 </script>
 </head>
@@ -109,17 +99,14 @@ document.addEventListener('DOMContentLoaded',()=>{
 <div id="wrap">
   <div id="top">
     <div class="panel">
-      <button id="reloadBtn" type="button">Reload</button>
-      <button id="shootBtn" type="button">Shoot</button>
+      <button id="reloadBtn" type="button">RELOAD</button>
+      <button id="shootBtn" type="button">SHOOT</button>
     </div>
   </div>
   <div id="imgWrap">
     <img id="mainImg" src="AUEPA0.png" alt="AUEPA0">
   </div>
-  <div id="ammo">
-    <div id="ammoNum">Ammo: 7</div>
-    <div id="bullets"></div>
-  </div>
+  <div id="ammo"></div>
 </div>
 </body>
 </html>
