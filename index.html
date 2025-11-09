@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>AUMR Retro</title>
+<title>AUMR Retro Reload</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 html,body{height:100%;width:100%;margin:0;padding:0;overflow:hidden;background:#080808;font-family:'Press Start 2P',monospace;touch-action: manipulation;user-select:none}
@@ -14,12 +14,12 @@ button{appearance:none;border:0;padding:12px 24px;border-radius:0;font-size:12px
 button:disabled{opacity:.45;cursor:not-allowed}
 button:active{transform:translateY(1px)}
 #imgWrap{display:flex;justify-content:center;align-items:flex-end;width:100%;flex:1;padding-bottom:18px}
-#ammo{position:absolute;bottom:12px;right:12px;display:flex;gap:2px;align-items:center}
-.capsule{width:14px;height:24px}
+#ammo{position:absolute;bottom:12px;right:12px;display:flex;gap:1px;align-items:center}
+.capsule{width:20px;height:36px}
 img#mainImg{max-width:100%;height:auto;display:block}
 @media (max-width:520px){
   button{padding:10px 18px;font-size:10px;min-width:70px}
-  .capsule{width:10px;height:18px}
+  .capsule{width:14px;height:26px}
 }
 </style>
 <script>
@@ -35,7 +35,7 @@ let reloading=false;
 
 function setImgNow(src){document.getElementById("mainImg").src=src}
 
-function updateCapsules(){
+function updateCapsulesInstant(){
   const container=document.getElementById("ammo");
   container.innerHTML='';
   for(let i=0;i<7;i++){
@@ -45,6 +45,23 @@ function updateCapsules(){
     if(i>=ammo)b.style.opacity=0.3;
     container.appendChild(b);
   }
+}
+
+function updateCapsulesSequential(callback){
+  const container=document.getElementById("ammo");
+  container.innerHTML='';
+  let i=0;
+  const t=setInterval(()=>{
+    const b=document.createElement('img');
+    b.src='AUERDbllet.png';
+    b.className='capsule';
+    container.appendChild(b);
+    i++;
+    if(i>=7){
+      clearInterval(t);
+      if(callback)callback();
+    }
+  },100);
 }
 
 function playSequence(seq,endImg,doneCallback,speed){
@@ -68,13 +85,14 @@ function reloadAction(){
   reloadBtn.disabled=true;
   shootBtn.disabled=true;
   const seq=(ammo<=0)?emptyReloadSeq:reloadSeq;
-  playSequence(seq,"AUMPA0.png",()=>{
+  playSequence(seq,null,()=>{
     ammo=7;
-    updateCapsules();
-    reloading=false;
-    reloadBtn.disabled=false;
-    shootBtn.disabled=false;
-    setImgNow("AUMPA0.png");
+    updateCapsulesSequential(()=>{
+      setImgNow("AUMPA0.png");
+      reloading=false;
+      reloadBtn.disabled=false;
+      shootBtn.disabled=false;
+    });
   },140);
 }
 
@@ -82,7 +100,7 @@ function shootAction(){
   if(shooting||reloading||ammo<=0)return;
   shooting=true;
   ammo--;
-  updateCapsules();
+  updateCapsulesInstant();
   const shootBtn=document.getElementById("shootBtn");
   shootBtn.disabled=true;
   playSequence(shootSeq,null,()=>{
@@ -99,7 +117,7 @@ window.addEventListener('keydown',e=>{if(e.key==="F5")e.preventDefault()});
 window.addEventListener('dblclick',e=>{e.preventDefault()});
 window.addEventListener('touchstart',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false});
 document.addEventListener('DOMContentLoaded',()=>{
-  updateCapsules();
+  updateCapsulesInstant();
   document.getElementById("reloadBtn").addEventListener('click',reloadAction);
   document.getElementById("shootBtn").addEventListener('click',shootAction);
 });
