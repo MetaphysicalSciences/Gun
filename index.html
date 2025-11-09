@@ -17,13 +17,13 @@ img{max-width:100%;height:auto;display:block;user-select:none;pointer-events:non
 </style>
 <script>
 const reloadSeq=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
+const emptyReloadSeq=["AUERB0.png","AUERC0.png","AUERD0.png","AUERE0.png","AUERF0.png","AUERG0.png","AUERH0.png","AUERI0.png","AUEPA0.png"];
 const shootSeq=["AUMPD0.png","AUMPE0.png","AUMPF0.png","AUMFB0.png","AUMFA0.png","AUMPG0.png","AUMRA0.png","AUMPF0.png"];
-const preload=[...reloadSeq,...shootSeq,"AUEPA0.png"];
+const preload=[...reloadSeq,...emptyReloadSeq,...shootSeq,"AUEPA0.png"];
 for(let f of preload){const im=new Image();im.src=f;}
 let ammo=7;let shooting=false;let reloading=false;
 function updateAmmo(){document.getElementById("ammo").textContent="Ammo: "+ammo;}
-function playSequence(seq,endImg,btn,callback){
-  btn.disabled=true;
+function playSequence(seq,endImg,callback,speed){
   let i=0;
   const el=document.getElementById("mainImg");
   const interval=setInterval(()=>{
@@ -32,32 +32,40 @@ function playSequence(seq,endImg,btn,callback){
     if(i>=seq.length){
       clearInterval(interval);
       if(endImg)el.src=endImg;
-      setTimeout(()=>{btn.disabled=false;if(callback)callback();},200);
+      if(callback)setTimeout(callback,200);
     }
-  },150);
+  },speed);
 }
 function reloadAction(){
-  if(reloading)return;
+  if(reloading||shooting)return;
   reloading=true;
   const reloadBtn=document.getElementById("reloadBtn");
   const shootBtn=document.getElementById("shootBtn");
   reloadBtn.disabled=true;
   shootBtn.disabled=true;
-  playSequence(reloadSeq,"AUEPA0.png",reloadBtn,()=>{
+  const seq=(ammo<=0)?emptyReloadSeq:reloadSeq;
+  playSequence(seq,"AUEPA0.png",()=>{
     ammo=7;
     updateAmmo();
     reloading=false;
-    shootBtn.disabled=false;
     reloadBtn.disabled=false;
-  });
+    shootBtn.disabled=false;
+  },150);
 }
 function shootAction(){
   if(shooting||reloading||ammo<=0)return;
   shooting=true;
   ammo--;
   updateAmmo();
-  const shootBtn=document.getElementById("shootBtn");
-  playSequence(shootSeq,null,shootBtn,()=>{shooting=false;if(ammo<=0)shootBtn.disabled=true;});
+  const el=document.getElementById("mainImg");
+  const seq=shootSeq;
+  playSequence(seq,null,()=>{
+    shooting=false;
+    if(ammo<=0){
+      el.src="AUEPA0.png";
+      document.getElementById("shootBtn").disabled=true;
+    }
+  },100);
 }
 window.addEventListener('keydown',e=>{if(e.key==="F5")e.preventDefault()});
 window.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
