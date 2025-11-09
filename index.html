@@ -15,7 +15,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 button:active{transform:translateY(1px)}
 #imgWrap{display:flex;justify-content:center;align-items:flex-end;width:100%;flex:1;padding-bottom:18px}
 #ammo{position:absolute;bottom:12px;right:12px;display:flex;gap:1px;align-items:center}
-.capsule{width:42px;height:72px} 
+.capsule{width:42px;height:72px;transition:opacity 0.05s} 
 img#mainImg{max-width:100%;height:auto;display:block}
 @media (max-width:520px){
   button{padding:10px 18px;font-size:10px;min-width:70px}
@@ -47,12 +47,12 @@ function updateCapsules(){
   }
 }
 
-function animateReloadBullets(startIndex,count,callback){
+function animateReloadBullets(startIndex,count,speed,callback){
   if(count<=0){if(callback)callback();return;}
   const container=document.getElementById("ammo");
   const bullet=container.children[startIndex];
   bullet.style.opacity=1;
-  setTimeout(()=>animateReloadBullets(startIndex+1,count-1,callback),100);
+  setTimeout(()=>animateReloadBullets(startIndex+1,count,speed,callback),speed);
 }
 
 function playSequence(seq,endImg,doneCallback,speed){
@@ -77,15 +77,14 @@ function reloadAction(){
   shootBtn.disabled=true;
   const emptySlots=7-ammo;
   const seq=(ammo<=0)?emptyReloadSeq:reloadSeq;
-  playSequence(seq,"AUMPA0.png",()=>{
-    animateReloadBullets(ammo,emptySlots,()=>{
-      ammo=7;
-      reloading=false;
-      reloadBtn.disabled=false;
-      shootBtn.disabled=false;
-      setImgNow("AUMPA0.png");
-    });
-  },140);
+  playSequence(seq,"AUMPA0.png",()=>{},140);
+  animateReloadBullets(ammo,emptySlots,120,()=>{
+    ammo=7;
+    reloading=false;
+    reloadBtn.disabled=false;
+    shootBtn.disabled=false;
+    setImgNow("AUMPA0.png");
+  });
 }
 
 function shootAction(){
