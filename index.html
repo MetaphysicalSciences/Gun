@@ -3,118 +3,118 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Retro AUMR</title>
+<title>AUMR Retro</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-:root{--pixel:6px;--gap:2px;--cols:3;--rows:5}
-html,body{height:100%;width:100%;margin:0;padding:0;overflow:hidden;background:#080808;font-family:'Press Start 2P',monospace}
+html,body{height:100%;width:100%;margin:0;padding:0;overflow:hidden;background:#080808;font-family:'Press Start 2P',monospace;touch-action: manipulation;user-select:none}
+*{touch-action:none;-webkit-user-select:none;-ms-user-select:none;user-select:none}
 #wrap{height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;position:relative}
-#top{width:100%;display:flex;justify-content:center;align-items:center;padding:14px 12px;box-sizing:border-box;gap:14px}
-.panel{background:rgba(20,20,20,0.6);border-radius:14px;padding:8px 12px;display:flex;gap:10px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
-button{appearance:none;border:0;padding:12px 24px;border-radius:8px;font-size:12px;background:linear-gradient(180deg,#2c2c2c,#151515);color:#fff;cursor:pointer;touch-action:manipulation;box-shadow:0 4px 14px rgba(0,0,0,0.6)}
+#top{width:100%;display:flex;justify-content:center;align-items:center;padding:14px 12px;gap:14px}
+button{appearance:none;border:0;padding:12px 24px;border-radius:0;font-size:12px;background:#111;color:#fff;cursor:pointer;min-width:80px}
 button:disabled{opacity:.45;cursor:not-allowed}
 button:active{transform:translateY(1px)}
 #imgWrap{display:flex;justify-content:center;align-items:flex-end;width:100%;flex:1;padding-bottom:18px}
-#capsules{position:absolute;bottom:14px;right:16px;display:flex;gap:8px;align-items:center}
-.capsule{display:grid;grid-template-columns:repeat(var(--cols),var(--pixel));grid-template-rows:repeat(var(--rows),var(--pixel));gap:var(--gap);padding:6px;background:rgba(0,0,0,0.45);border-radius:6px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.02)}
-.pixel{width:var(--pixel);height:var(--pixel);background:linear-gradient(180deg,#fffbec,#ffd36b);box-shadow:0 1px 0 rgba(0,0,0,0.25)}
-.pixel.off{background:linear-gradient(180deg,#2b2b2b,#171717);opacity:0.55}
-img{max-width:100%;height:auto;display:block;user-select:none;pointer-events:none;filter:contrast(120%) brightness(1.05)}
+#ammo{position:absolute;bottom:12px;right:12px;display:flex;gap:2px;align-items:center}
+.capsule{width:14px;height:24px}
+img#mainImg{max-width:100%;height:auto;display:block}
 @media (max-width:520px){
-  :root{--pixel:4px;--gap:1px}
-  button{padding:10px 16px;font-size:10px}
+  button{padding:10px 18px;font-size:10px;min-width:70px}
+  .capsule{width:10px;height:18px}
 }
 </style>
 <script>
 const reloadSeq=["AUMRB0.png","AUMRC0.png","AUMRD0.png","AUMRE0.png","AUMRF0.png","AUMRG0.png","AUMRH0.png","AUMRI0.png","AUMRJ0.png","AUMRK0.png","AUMRL0.png"];
 const emptyReloadSeq=["AUERB0.png","AUERC0.png","AUERD0.png","AUERE0.png","AUERF0.png","AUERG0.png","AUERH0.png","AUERI0.png","AUMPA0.png"];
 const shootSeq=["AUMPD0.png","AUMPE0.png","AUMPF0.png","AUMFB0.png","AUMFA0.png","AUMPG0.png","AUMRA0.png","AUMPF0.png"];
-const preload=[...reloadSeq,...emptyReloadSeq,...shootSeq,"AUMPA0.png","AUEPA0.png"];
-for(let f of preload){const im=new Image();im.src=f}
-let ammo=7;let shooting=false;let reloading=false;let lastTouch=0;
-function setImg(src){document.getElementById("mainImg").src=src}
-function buildCapsules(){
-  const container=document.getElementById("capsules");container.innerHTML='';
-  for(let c=0;c<7;c++){
-    const cap=document.createElement('div');cap.className='capsule';
-    for(let r=0;r<5;r++){for(let col=0;col<3;col++){
-      const p=document.createElement('div');p.className='pixel';cap.appendChild(p);
-    }}
-    container.appendChild(cap);
+const preload=[...reloadSeq,...emptyReloadSeq,...shootSeq,"AUMPA0.png","AUEPA0.png","AUERDbllet.png"];
+for(let f of preload){const im=new Image();im.src=f;}
+
+let ammo=7;
+let shooting=false;
+let reloading=false;
+
+function setImgNow(src){document.getElementById("mainImg").src=src}
+
+function updateCapsules(){
+  const container=document.getElementById("ammo");
+  container.innerHTML='';
+  for(let i=0;i<7;i++){
+    const b=document.createElement('img');
+    b.src='AUERDbllet.png';
+    b.className='capsule'+(i<ammo?'':' empty');
+    if(i>=ammo)b.style.opacity=0.3;
+    container.appendChild(b);
   }
-  refreshCapsules();
 }
-function refreshCapsules(){
-  const caps=document.querySelectorAll('.capsule');
-  caps.forEach((cap,idx)=>{
-    const pixels=cap.querySelectorAll('.pixel');
-    if(idx<ammo){
-      pixels.forEach(p=>{p.classList.remove('off')});
-    } else {
-      pixels.forEach(p=>{p.classList.add('off')});
-    }
-  });
-}
-function playSequence(seq,endImg,done,speed){
-  const el=document.getElementById("mainImg");let i=0;
+
+function playSequence(seq,endImg,doneCallback,speed){
+  const el=document.getElementById("mainImg");
+  let i=0;
   const t=setInterval(()=>{
     if(i<seq.length){el.src=seq[i];i++}
     if(i>=seq.length){
       clearInterval(t);
       if(endImg)el.src=endImg;
-      if(done)setTimeout(done,140);
+      if(doneCallback)setTimeout(doneCallback,100);
     }
   },speed);
 }
+
 function reloadAction(){
   if(reloading||shooting)return;
   reloading=true;
-  const reloadBtn=document.getElementById("reloadBtn");const shootBtn=document.getElementById("shootBtn");
-  reloadBtn.disabled=true;shootBtn.disabled=true;
+  const reloadBtn=document.getElementById("reloadBtn");
+  const shootBtn=document.getElementById("shootBtn");
+  reloadBtn.disabled=true;
+  shootBtn.disabled=true;
   const seq=(ammo<=0)?emptyReloadSeq:reloadSeq;
   playSequence(seq,"AUMPA0.png",()=>{
-    ammo=7;refreshCapsules();reloading=false;reloadBtn.disabled=false;shootBtn.disabled=false;setImg("AUMPA0.png");
+    ammo=7;
+    updateCapsules();
+    reloading=false;
+    reloadBtn.disabled=false;
+    shootBtn.disabled=false;
+    setImgNow("AUMPA0.png");
   },140);
 }
+
 function shootAction(){
   if(shooting||reloading||ammo<=0)return;
-  shooting=true;ammo--;refreshCapsules();
-  const shootBtn=document.getElementById("shootBtn");shootBtn.disabled=true;
+  shooting=true;
+  ammo--;
+  updateCapsules();
+  const shootBtn=document.getElementById("shootBtn");
+  shootBtn.disabled=true;
   playSequence(shootSeq,null,()=>{
-    shooting=false;shootBtn.disabled=false;
-    if(ammo<=0){setImg("AUEPA0.png");document.getElementById("shootBtn").disabled=true}
-  },80);
+    shooting=false;
+    shootBtn.disabled=false;
+    if(ammo<=0){
+      setImgNow("AUEPA0.png");
+      shootBtn.disabled=true;
+    }
+  },90);
 }
-window.addEventListener('DOMContentLoaded',()=>{
-  buildCapsules();
-  document.getElementById("reloadBtn").addEventListener('click',reloadAction);
-  document.getElementById("reloadBtn").addEventListener('touchend',e=>{e.preventDefault();reloadAction()},{passive:false});
-  document.getElementById("shootBtn").addEventListener('click',shootAction);
-  document.getElementById("shootBtn").addEventListener('touchend',e=>{e.preventDefault();shootAction()},{passive:false});
-  document.addEventListener('touchend',function(e){
-    const now=Date.now();
-    if(now-lastTouch<300){e.preventDefault();}
-    lastTouch=now;
-  },{passive:false});
-  document.addEventListener('touchstart',function(e){
-    if(e.touches.length>1)e.preventDefault();
-  },{passive:false});
-});
+
 window.addEventListener('keydown',e=>{if(e.key==="F5")e.preventDefault()});
+window.addEventListener('dblclick',e=>{e.preventDefault()});
+window.addEventListener('touchstart',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false});
+document.addEventListener('DOMContentLoaded',()=>{
+  updateCapsules();
+  document.getElementById("reloadBtn").addEventListener('click',reloadAction);
+  document.getElementById("shootBtn").addEventListener('click',shootAction);
+});
 </script>
 </head>
 <body>
 <div id="wrap">
   <div id="top">
-    <div class="panel">
-      <button id="reloadBtn" type="button">RELOAD</button>
-      <button id="shootBtn" type="button">SHOOT</button>
-    </div>
+    <button id="reloadBtn" type="button">RELOAD</button>
+    <button id="shootBtn" type="button">SHOOT</button>
   </div>
   <div id="imgWrap">
-    <img id="mainImg" src="AUEPA0.png" alt="">
+    <img id="mainImg" src="AUEPA0.png" alt="AUEPA0">
   </div>
-  <div id="capsules"></div>
+  <div id="ammo"></div>
 </div>
 </body>
 </html>
